@@ -1,5 +1,6 @@
-import {Client as Appwrite, Databases, Account, Teams} from "appwrite";
+import {Client as Appwrite, Databases, Account, Teams, Query} from "appwrite";
 import {Server} from "../utils/config";
+import group from "../pages/Dashboard/Group.jsx";
 
 let api = {
         sdk: null,
@@ -18,26 +19,30 @@ let api = {
             return api.sdk;
         },
 
-        createAccount: (email, password, name) => {
-            return api.provider().account.create("unique()", email, password, name);
-        },
+    createAccount: (email, password, name) => {
+        return api.provider().account.create("unique()", email, password, name);
+    },
 
-        getAccount: () => {
-            let account = api.provider().account;
-            return account.get();
-        },
+    createSession: (email, password) => {
+        return api.provider().account.createEmailSession(email, password);
+    },
 
-        createSession: (email, password) => {
-            return api.provider().account.createEmailSession(email, password);
-        },
+    getAccount: () => {
+        let account = api.provider().account;
+        return account.get();
+    },
 
-        deleteCurrentSession: (_) => {
-            return api.provider().account.deleteSession("current");
-        },
+    getUserInfo: (userId) => {
 
-        createDocument: (databaseId, collectionId, data, permissions) => {
-            return api
-                .provider()
+    },
+
+    deleteCurrentSession: (_) => {
+        return api.provider().account.deleteSession("current");
+    },
+
+    createDocument: (databaseId, collectionId, data, permissions) => {
+        return api
+            .provider()
                 .database.createDocument(databaseId, collectionId, 'unique()', data, permissions);
         },
 
@@ -55,31 +60,81 @@ let api = {
             return api.provider().database.deleteDocument(databaseId, collectionId, documentId);
         },
 
-        createGroup: (groupName) => {
-            return api.provider().group.create("unique()", groupName);
+        // return sum + records
+        listRecords: (groupId) => {
+            return api.listDocuments(Server.databaseID, Server.collectionID, [
+                Query.equal('groupId', groupId),
+            ]).then((response) => {
+                console.log(response);
+                return {sum: [], records: response.documents.reverse()}
+            })
         },
 
-        listGroups: () => {
-            return api.provider().group.list();
+        createRecord: (groupId, name, data) => {
+            return api.getAccount().then((response) => {
+                return api.createDocument(Server.databaseID, Server.collectionID, {
+                    groupId: groupId,
+                    name: name,
+                    creator: response.$id,
+                    data: JSON.stringify(data),
+                }).then((response) => {
+                    return {sum: [], record: response}
+                })
+            })
         },
 
-        getGroup: (groupId) => {
-            return api.provider().group.get(groupId);
+        deleteRecord: (groupId, recordId) => {
+            return api.deleteDocument(Server.databaseID, Server.collectionID, recordId);
         },
 
-        createGroupMembership: (groupId, userId) => {
-            return api.provider().group.createMembership({
-                teamId: groupId,
-                userId: userId,
-                roles: "owner",
-                url: "https://google.com", //TODO: Change this to the actual URL
-            });
+    updateRecord: (groupId, recordId, data, name) => {
+        return api.updateDocument(Server.databaseID, Server.collectionID, recordId, {
+            data: data,
+            name: name,
+        })
+    },
+
+    listGroups: () => {
+        return api.provider().group.list();
+    },
+
+    inviteGroupMember: (groupId, userId) => {
+        return api.provider().group.createMembership({
+            teamId: groupId,
+            userId: userId,
+            roles: ["owner"],
+            url: "https://google.com", //TODO: Change this to the actual URL
+        });
+    },
+
+    createGroup: (groupName) => {
+        return api.provider().group.create("unique()", groupName);
+    },
+
+
+    getGroup: (groupId) => {
+        return api.provider().group.get(groupId);
+    },
+
+    // Appwrite only
+        listGroupMemberships: (groupId) => {
+            return api.provider().group.listMemberships(groupId);
         },
+
+        //return group object
+        getGroupInfo: (groupId) => {
+            return api.listGroupMemberships(groupId).then((response) => {
+                return api.getGroup(groupId).then((group) => {
+                    return {$id: groupId, members: response.memberships, name: group.name}
+                })
+            })
+        },
+
 
         // Appwrite only
         updateGroupMembershipStatus: (groupId, memberId, userId, secret) => {
             return api.provider().group.updateMembershipStatus(groupId, memberId, userId, secret);
-        }
+        },
 
 
     }
