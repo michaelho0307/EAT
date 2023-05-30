@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {
     Button,
     Table,
@@ -40,9 +40,10 @@ import {
     AlertDialogCloseButton,
     AlertDialogBody,
     AlertDialogHeader,
+    Avatar,
     Menu,
     MenuList,
-    MenuButton, MenuItem, Spacer, AlertIcon, AlertTitle, AlertDescription, Alert, CloseButton
+    MenuButton, MenuItem, Spacer, AlertIcon, AlertTitle, AlertDescription, Alert, CloseButton, Tag, TagLabel, TagCloseButton , Stat, StatLabel, StatNumber, StatHelpText, StatArrow, StatGroup
 } from "@chakra-ui/react";
 import {FetchState, useGetGroupInfo, useGetUser} from "../../hooks/index.js";
 import api from "../../api/api.jsx";
@@ -58,6 +59,9 @@ import {MdAdd, MdMinimize, MdSave} from "react-icons/md";
     3. Mapping records to username
     4. Display the records
  */
+
+
+
 const Group = ({user, group, isGroupsLoading}) => {
     const groupId = group ? group.$id : null;
     const [stale, setStale] = useState({stale: false});
@@ -69,6 +73,9 @@ const Group = ({user, group, isGroupsLoading}) => {
 
     const {isOpen: isInviteOpen, onOpen: onInviteOpen, onClose: onInviteClose} = useDisclosure();
 
+    const [selectedRecord, setSelectedRecord] = useState(null);
+    const [selectedRecordIndex, setSelectedRecordIndex] = useState(null);
+
     const handleUserChange = (e, index) => {
         setNewData(newData.map((innerItem, i) =>
             (i === index) ? {...innerItem, userId: e.target.value} : innerItem
@@ -78,13 +85,13 @@ const Group = ({user, group, isGroupsLoading}) => {
 
         setNewData(newData.map((innerItem, i) => {
             if (i === index) {
-                    return {
-                        ...innerItem,
-                        value: isNaN(parseInt(e.target.value)) ? 0 : parseInt(e.target.value)
-                    }
-                } else {
-                    return innerItem
+                return {
+                    ...innerItem,
+                    value: isNaN(parseInt(e.target.value)) ? 0 : parseInt(e.target.value)
                 }
+            } else {
+                return innerItem
+            }
             }
         ))
     }
@@ -171,11 +178,11 @@ const Group = ({user, group, isGroupsLoading}) => {
     }
 
 
-    const handleUpdate = (e) => {
+    const handleUpdate = async (recordId) => {
         //TODO: implement update
         notImplemented()
-    }
-
+    };
+      
 
     const notImplemented = () => {
         toast({
@@ -250,6 +257,25 @@ const Group = ({user, group, isGroupsLoading}) => {
         </AlertDialog>
     }
 
+    const Show_each_amount = ({member}) => {
+        const sum = sumMemberValues(member.$id)
+        return (
+            <Stat key={member.$id} mb="2" mr="50" flex="1">
+                <Flex align="center">
+                <Avatar name={member.userName} size="sm" mr="4" />
+                <Box>
+                <StatLabel whiteSpace="nowrap">{member.userName}</StatLabel>
+                <StatNumber color={sum < 0 ? "red.500" : "teal.500"}>
+                    {sum < 0 ? `-${Math.abs(sum)}` : sum}
+                </StatNumber>
+                </Box>
+                </Flex>
+            </Stat>
+        )
+
+    }
+    
+
     const NewDataCard = () => {
         return <Card width={"100%"} direction={{base: 'column'}} overflow='hidden'>
             <HStack>
@@ -306,6 +332,27 @@ const Group = ({user, group, isGroupsLoading}) => {
             </HStack>
         </Card>
     }
+    //mapping records data's userid to username
+    const mappedRecords = records.map((record) => {
+        const mappedData = JSON.parse(record.data).map((item) => {
+            const user = members.find((member) => member.$id === item.userId)
+            return {...item, userName: user.userName}
+        })
+        return {...record, data: mappedData}
+    })
+
+    //summing up the amount of money each member owes
+    const sumMemberValues = (memberId) => {
+        
+        const memberRecords = mappedRecords.filter((record) => record.data.some((item) => item.userId === memberId))
+        const memberValues = memberRecords.map((record) => {
+            const memberValue = record.data.find((item) => item.userId === memberId).value
+            return memberValue
+        })
+        const sum = memberValues.reduce((a, b) => a + b, 0)
+        return sum
+    }
+
 
     const RecordCard = ({record}) => {
 
@@ -330,9 +377,32 @@ const Group = ({user, group, isGroupsLoading}) => {
                     </HStack>
                 </Card>
                 <Collapse in={isDataOpen} animateOpacity>
-                    <Box p='40px' color='white' mt='4' bg='gray.600' rounded='md' shadow='md'>
-                        <Text>{record.data}</Text>
-                    </Box>
+                <Box p="30px" color="black" mt="2" rounded="md" shadow="md">
+                    <StatGroup>
+                    {mappedRecords.find((item) => item.$id === record.$id).data.map((item, index) => (
+                    <Stat key={index} w="100" mr="150" flex="1">
+                    <Flex direction="row">
+                        <Avatar name={item.userName} size="sm" mr="2" />
+                        <Box> 
+                        <StatLabel w="10" whiteSpace="nowrap">{item.userName}</StatLabel>
+                            {item.value > 0 ? (
+                            <StatHelpText color="green.500" whiteSpace="noWrap">
+                                <StatArrow type="increase" whiteSpace="nowrap"/>
+                                {item.value}
+                            </StatHelpText>
+                            ) : (
+                            <StatHelpText color="red.500" whiteSpace="noWrap">
+                                <StatArrow type="decrease" />
+                                {Math.abs(item.value)}
+                            </StatHelpText>
+                            )}
+                        </Box>
+                    </Flex>
+                        
+                    </Stat>
+                    ))}
+                    </StatGroup>
+                </Box>
                 </Collapse>
                 <AlertDialog
                     motionPreset='slideInBottom'
@@ -369,6 +439,9 @@ const Group = ({user, group, isGroupsLoading}) => {
         )
     }
 
+    useEffect(() => {
+        setStale({stale: true})
+    }, [group])
 
     return (
         <Box w={"100%"}>
@@ -387,7 +460,8 @@ const Group = ({user, group, isGroupsLoading}) => {
                     <VStack flex={"max-content"} h={"max"}>
                         <HStack spacing={4}>
                             <Heading>{group.name}</Heading>
-                            {/*<Text>{JSON.stringify(newData)}</Text>*/}
+                            
+
                             <Menu>
                                 <MenuButton as={IconButton} icon={<SettingsIcon/>} variant='solid'>
                                 </MenuButton>
@@ -398,10 +472,19 @@ const Group = ({user, group, isGroupsLoading}) => {
 
                         </HStack>
                         <InviteModal isOpen={isInviteOpen} onClose={onInviteClose}/>
+                        //show the amount of money each member owes
+                        <Box p="30px" color="black" mt="2" rounded="md">
+                        <Flex direction="row">
+                            {members.map((member) => (
+                                <Show_each_amount key={member.$id} member={member}/>
+                            ))}
+                        </Flex>
+                        </Box>
                         {NewDataCard()}
                         {records.map((record) => (
                             <RecordCard key={record.$id} record={record}/>
                         ))}
+
                     </VStack>
             }
         </Box>

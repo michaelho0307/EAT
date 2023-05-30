@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 # request handler
 @csrf_exempt
 def hello(request):
-    return render(request, './hello.html', {'name': 'Hensuu'})
+    return render(request, './hello.html', {'name': 'Tinger'})
 
 # user APIs
 @csrf_exempt
@@ -61,7 +61,7 @@ def create_get_user(request):
         }
         # add header with Access Control Allow Origin
         response = JsonResponse(response_data, status=201)
-        response['Access-Control-Allow-Origin'] = '*'
+        # response['Access-Control-Allow-Origin'] = '*'
         return response
         # return JsonResponse(response_data, status=201)
     else:
@@ -101,7 +101,7 @@ def create_session(request):
     }
     response = JsonResponse(sessionidJson, status=201)
     response.set_cookie('session_id', session.session_id,httponly=True,secure=True)
-    response['Access-Control-Allow-Origin'] = '*'
+    # response['Access-Control-Allow-Origin'] = '*'
     return response
 
 @csrf_exempt
