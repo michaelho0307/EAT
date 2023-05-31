@@ -28,12 +28,13 @@ DEBUG = True
 
 
 ALLOWED_HOSTS = ['*'] 
-CSRF_TRUSTED_ORIGINS = ['https://*']
-CORS_ALLOWED_ORIGINS = ['https://*']
-
+CSRF_TRUSTED_ORIGINS = ['https://*', 'http://*', 'http://127.0.0.1:5173', 'http://localhost:5173']
+CORS_ALLOWED_ORIGINS = ['https://*', 'http://*', 'http://127.0.0.1:5173', 'http://localhost:5173']
+SESSION_COOKIE_SAMESITE = None
+CRSF_COOKIE_SAMESITE = None
 
 # Application definition
-CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ORIGIN_ALLOW_ALL = True
 INSTALLED_APPS = [
     'corsheaders',
     'playground.apps.PlaygroundConfig',
@@ -45,7 +46,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',   # static files
     # 'playground',                   # our playground app
 ]
-
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:5173',
+]
 MIDDLEWARE = [
     # 'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

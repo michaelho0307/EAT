@@ -203,7 +203,7 @@ const Group = ({user, group, isGroupsLoading}) => {
             setIsLoading(true)
             setIsError(false)
             try {
-                const res = await api.inviteGroupMember(groupId, invitedUserId)
+                const res = await api.inviteGroupMember(groupId, user.$id, invitedUserId)
                 toast({
                     description: 'Invitation sent',
                     status: 'success',
@@ -262,9 +262,9 @@ const Group = ({user, group, isGroupsLoading}) => {
         return (
             <Stat key={member.$id} mb="2" mr="50" flex="1">
                 <Flex align="center">
-                <Avatar name={member.userName} size="sm" mr="4" />
+                <Avatar name={member.name} size="sm" mr="4" />
                 <Box>
-                <StatLabel whiteSpace="nowrap">{member.userName}</StatLabel>
+                <StatLabel whiteSpace="nowrap">{member.name}</StatLabel>
                 <StatNumber color={sum < 0 ? "red.500" : "teal.500"}>
                     {sum < 0 ? `-${Math.abs(sum)}` : sum}
                 </StatNumber>
@@ -278,11 +278,11 @@ const Group = ({user, group, isGroupsLoading}) => {
 
     const NewDataCard = () => {
         return <Card width={"100%"} direction={{base: 'column'}} overflow='hidden'>
-            <HStack>
+            <HStack backgroundColor={"black"}>
                 <CardBody>
                     <Stack spacing={5}>
                         <Input placeholder={"Description"} size={"lg"} maxW={600} onChange={(e) => {
-                            console.log("change")
+                            
                             setDescription(e.target.value)
                         }}></Input>
                         <SimpleGrid columns={{base: 1, md: 2}} spacingX={8} spacingY={5}>
@@ -291,10 +291,11 @@ const Group = ({user, group, isGroupsLoading}) => {
                                     <Select placeholder={"Select user"}
                                             key={index} value={item.userId}
                                             minW={"max-content"}
-                                            onChange={(e) => handleUserChange(e, index)}>
+                                            onChange={(e) => handleUserChange(e, index)}
+                                            color={"white"}>
                                         {members.map((member) => (
                                             <option key={member.$id}
-                                                    value={member.$id}>{member.userName}</option>
+                                                    value={member.$id}>{member.name}</option>
                                         ))}
                                     </Select>
                                     <InputGroup maxWidth={200}>
@@ -307,8 +308,7 @@ const Group = ({user, group, isGroupsLoading}) => {
                                         />
                                         <Input type={"number"}
                                                onChange={(e) => handleValueChange(e, index)}
-
-
+                                               color={"white"}
                                         />
                                     </InputGroup>
                                     <IconButton aria-label={"delete"} icon={<DeleteIcon/>} onClick={() => {
@@ -334,9 +334,11 @@ const Group = ({user, group, isGroupsLoading}) => {
     }
     //mapping records data's userid to username
     const mappedRecords = records.map((record) => {
-        const mappedData = JSON.parse(record.data).map((item) => {
+        
+        const mappedData = record.data.map((item) => {
+            
             const user = members.find((member) => member.$id === item.userId)
-            return {...item, userName: user.userName}
+            return {...item, userName: user.name}
         })
         return {...record, data: mappedData}
     })
@@ -363,10 +365,10 @@ const Group = ({user, group, isGroupsLoading}) => {
         return (
             <>
                 <Card key={record.$id} direction={{base: 'column'}} width={"100%"} overflow='hidden'>
-                    <HStack>
+                    <HStack backgroundColor={"black"}>
                         <CardBody onClick={onToggle}>
-                            <Heading size='md'> {record.name}</Heading>
-                            <Text fontSize={"md"}>{new Date(record.$createdAt).toLocaleString()}</Text>
+                            <Heading size='md' color={"white"}> {record.name}</Heading>
+                            <Text fontSize={"md"} color={"white"}>{new Date(record.$createdAt).toLocaleString()}</Text>
                         </CardBody>
                         <CardFooter>
                             <ButtonGroup variant='ghost' spacing='2'>
@@ -377,7 +379,7 @@ const Group = ({user, group, isGroupsLoading}) => {
                     </HStack>
                 </Card>
                 <Collapse in={isDataOpen} animateOpacity>
-                <Box p="30px" color="black" mt="2" rounded="md" shadow="md">
+                <Box p="30px" color="white" mt="2" rounded="md" shadow="md">
                     <StatGroup>
                     {mappedRecords.find((item) => item.$id === record.$id).data.map((item, index) => (
                     <Stat key={index} w="100" mr="150" flex="1">
@@ -473,7 +475,7 @@ const Group = ({user, group, isGroupsLoading}) => {
                         </HStack>
                         <InviteModal isOpen={isInviteOpen} onClose={onInviteClose}/>
                         //show the amount of money each member owes
-                        <Box p="30px" color="black" mt="2" rounded="md">
+                        <Box p="30px" color="white" mt="2" rounded="md">
                         <Flex direction="row">
                             {members.map((member) => (
                                 <Show_each_amount key={member.$id} member={member}/>
